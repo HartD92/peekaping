@@ -1,0 +1,67 @@
+name: Patched Build
+
+on:
+  push:
+    branches:
+      - 'patch/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: web
+            context: .
+            dockerfile: ./apps/web/Dockerfile
+          - service: api
+            context: ./apps/server
+            dockerfile: ./apps/server/infra/Dockerfile.api
+          - service: worker
+            context: ./apps/server
+            dockerfile: ./apps/server/infra/Dockerfile.worker
+          - service: producer
+            context: ./apps/server
+            dockerfile: ./apps/server/infra/Dockerfile.producer
+          - service: ingester
+            context: ./apps/server
+            dockerfile: ./apps/server/infra/Dockerfile.ingester
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push ${{ matrix.service }} image
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          provenance: false
+          sbom: false
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/peekaping-${{ matrix.service }}:0.0.46-patch260
+            ghcr.io/${{ github.repository_owner }}/peekaping-${{ matrix.service }}:patch-latest
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/peekaping-${{ matrix.service }}:buildcache
+          cache-to: type=registry,ref=ghcr.io/${{ github.repository_owner }}/peekaping-${{ matrix.service }}:buildcache,mode=max
