@@ -61,7 +61,7 @@ jobs:
           provenance: false
           sbom: false
           tags: |
-            ghcr.io/hartd92/peekaping-${{ matrix.service }}:0.0.46-patch260
+            ghcr.io/hartd92/peekaping-${{ matrix.service }}:0.0.46-patch260-ui-target1
             ghcr.io/hartd92/peekaping-${{ matrix.service }}:patch-latest
           cache-from: type=registry,ref=ghcr.io/hartd92/peekaping-${{ matrix.service }}:buildcache
           cache-to: type=registry,ref=ghcr.io/hartd92/peekaping-${{ matrix.service }}:buildcache,mode=max
